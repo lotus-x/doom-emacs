@@ -20,8 +20,8 @@
 ;; See 'C-h v doom-font' for documentation and more examples of what they
 ;; accept. For example:
 
-(setq doom-font (font-spec :family "MonoLisa Variable" :size 12 :weight 'semi-light))
-;; (setq doom-font (font-spec :family "Monaspace Neon" :size 12))
+;; (setq doom-font (font-spec :family "MonoLisa Variable" :size 12 :weight 'semi-light))
+(setq doom-font (font-spec :family "Monaspace Neon" :size 12))
 (setq doom-symbol-font (font-spec :family "Symbols Nerd Font Mono"))
 
 (after! ligature
