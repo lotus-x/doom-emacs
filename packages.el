@@ -55,3 +55,9 @@
 (package! expreg)
 (package! elisp-autofmt)
 (package! mason)
+(package! jtsx)
+(package! lsp-vtsls :recipe (:host github :repo "sdvcrx/lsp-vtsls"))
+(package! kind-icon)
+(package! claude-code-ide
+  :recipe (:host github :repo "manzaltu/claude-code-ide.el"))
+(package! flymake-cspell)
