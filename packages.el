@@ -61,3 +61,6 @@
 (package! claude-code-ide
   :recipe (:host github :repo "manzaltu/claude-code-ide.el"))
 (package! flymake-cspell)
+(package! smooth-scrolling)
+(package! ultra-scroll :recipe (:host github :repo "jdtsmith/ultra-scroll"))
+(unpin! dirvish)

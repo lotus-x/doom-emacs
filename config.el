@@ -1,5 +1,7 @@
 ;;; $DOOMDIR/config.el -*- lexical-binding: t; -*-
 
+(setenv "LSP_USE_PLISTS" "true")
+
 ;; Place your private configuration here! Remember, you do not need to run 'doom
 ;; sync' after modifying this file!
 
@@ -100,6 +102,13 @@
 ;; bind s to avy
 (remove-hook 'doom-first-input-hook #'evil-snipe-mode)
 (map! :n "s" #'evil-avy-goto-char-timer)
+
+;; Stop Doom from automatically continuing comments on a new line
+(advice-remove 'newline-and-indent #'+default--newline-indent-and-continue-comments-a)
+;; 1. When pressing RET in insert mode (Doom advises `newline-and-indent')
+(setq +default-want-RET-continue-comments nil)
+;; 2. When using evil's `o'/`O' to open a line from within a comment
+(setq +evil-want-o/O-to-continue-comments nil)
 
 ;; expand selection based on tree sitter
 (use-package! expreg
@@ -382,3 +391,49 @@
 
 ;; magit
 (setq magit-process-popup-on-error t)
+
+;; disable smartparens for jsx
+(after! (:and smartparens jtsx )
+  (sp-local-pair '(jtsx-jsx-mode jtsx-tsx-mode jtsx-typescript-mode)
+                 "<" ">" :actions nil))
+;; for html
+(after! (:and smartparens web-mode)
+  (sp-local-pair '(web-mode html-mode mhtml-mode nxml-mode)
+                 "<" ">" :actions nil))
+(after! web-mode
+  (setq web-mode-enable-auto-closing t
+        web-mode-enable-auto-pairing t
+        web-mode-auto-close-style 2
+        web-mode-enable-auto-quoting t))
+
+;; lsp booster
+(defun lsp-booster--advice-json-parse (old-fn &rest args)
+  "Try to parse bytecode instead of json."
+  (or
+   (when (equal (following-char) ?#)
+     (let ((bytecode (read (current-buffer))))
+       (when (byte-code-function-p bytecode)
+         (funcall bytecode))))
+   (apply old-fn args)))
+(advice-add (if (progn (require 'json)
+                       (fboundp 'json-parse-buffer))
+                'json-parse-buffer
+              'json-read)
+            :around
+            #'lsp-booster--advice-json-parse)
+
+(defun lsp-booster--advice-final-command (old-fn cmd &optional test?)
+  "Prepend emacs-lsp-booster command to lsp CMD."
+  (let ((orig-result (funcall old-fn cmd test?)))
+    (if (and (not test?)                             ;; for check lsp-server-present?
+             (not (file-remote-p default-directory)) ;; see lsp-resolve-final-command, it would add extra shell wrapper
+             lsp-use-plists
+             (not (functionp 'json-rpc-connection))  ;; native json-rpc
+             (executable-find "emacs-lsp-booster"))
+        (progn
+          (when-let ((command-from-exec-path (executable-find (car orig-result))))  ;; resolve command from exec-path (in case not found in $PATH)
+            (setcar orig-result command-from-exec-path))
+          (message "Using emacs-lsp-booster for %s!" orig-result)
+          (cons "emacs-lsp-booster" orig-result))
+      orig-result)))
+(advice-add 'lsp-resolve-final-command :around #'lsp-booster--advice-final-command)
